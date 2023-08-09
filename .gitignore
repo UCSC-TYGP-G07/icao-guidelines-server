@@ -1,3 +1,6 @@
-/dataset/
+# IDE files
+.idea/
 
+# Dataset
+/dataset/
 /similarity/images/
