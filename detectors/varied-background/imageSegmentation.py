@@ -1,6 +1,59 @@
 import cv2
 import numpy as np
 
+def most_common_non_black_pixel(hist):
+    non_black_hist = hist[1:]
+    most_common_pixel_value = np.argmax(non_black_hist)
+    return most_common_pixel_value
+
+def highlight_most_visible_color(background, most_common_pixel_value, variance=10):
+    gray_background = cv2.cvtColor(background, cv2.COLOR_BGR2GRAY)
+    lower_bound = max(0, most_common_pixel_value - variance)
+    upper_bound = min(255, most_common_pixel_value + variance)
+    mask = cv2.inRange(gray_background, np.array([lower_bound]), np.array([upper_bound]))
+    highlighted_image = cv2.bitwise_and(background, background, mask=mask)
+    return highlighted_image
+
+def is_plain_colored_background(background, variance=5):
+    # Convert the background to grayscale
+    gray_background = cv2.cvtColor(background, cv2.COLOR_BGR2GRAY)
+    
+    # Compute histogram of grayscale values
+    hist = cv2.calcHist([gray_background], [0], None, [256], [0, 256])
+    
+    # Exclude black pixels from the histogram calculation
+    black_pixels = hist[0]
+    total_black_pixels = int(black_pixels[0])
+    
+    # Find the most common non-black grayscale value
+    most_common_pixel_value = most_common_non_black_pixel(hist)
+    
+    # Calculate the percentage of the most common pixel value among non-black pixels
+    total_non_black_pixels = gray_background.size - total_black_pixels
+    most_common_pixel_count = hist[most_common_pixel_value + 1]  # +1 to account for excluding black pixels
+    percentage = (most_common_pixel_count / total_non_black_pixels) * 100
+    
+    # Highlight the most visible color pixels with variance
+    highlighted_image = highlight_most_visible_color(background, most_common_pixel_value, variance)
+    
+    # Calculate the percentage of highlighted pixels within variance
+    highlighted_gray = cv2.cvtColor(highlighted_image, cv2.COLOR_BGR2GRAY)
+    highlighted_pixels = np.count_nonzero(highlighted_gray)
+    percentage_within_variance = (highlighted_pixels / total_non_black_pixels) * 100
+    print(percentage_within_variance)
+    
+    # Display the highlighted image
+    cv2.imshow("Highlighted Image", highlighted_image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    
+    # Check if the percentage within variance is above a threshold
+    return percentage_within_variance >= 90  # Adjust the threshold as needed
+
+
+
+
+
 def get_background(image_path):
     # Load the image
     image = cv2.imread(image_path)
@@ -28,7 +81,7 @@ def get_background(image_path):
     return background   
 
 if __name__ == "__main__":
-    image_path = "dataset/valid/N230101743.JPG"  # Replace with the path to your image
+    image_path = "dataset/our_pics/masha.jpg"  # Replace with the path to your image
     output_image = get_background(image_path)
 
 
@@ -36,6 +89,8 @@ if __name__ == "__main__":
         # Display the original and processed images
         cv2.imshow("Original Image", cv2.imread(image_path))
         cv2.imshow("Background", output_image)
+
+        print(is_plain_colored_background(output_image))
 
         # Wait for a key press and then close the windows
         cv2.waitKey(0)

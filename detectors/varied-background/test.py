@@ -28,7 +28,7 @@ def get_background(image_path):
     return background   
 
 if __name__ == "__main__":
-    image_path = "dataset/valid/N230101743.JPG"  # Replace with the path to your image
+    image_path = "/Users/ravinduwegiriya/Desktop/UCSC/Year 3/Semester 1/3214 Group Project II/icao-guidelines-server/dataset/valid/N230101660.JPG"  # Replace with the path to your image
     output_image = get_background(image_path)
 
 
