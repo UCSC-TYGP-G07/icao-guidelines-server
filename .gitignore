@@ -1,6 +1,8 @@
+# IDE files
+.idea/
+
 # Dataset
 /dataset/
-
 /similarity/images/
 
 # OS Files
