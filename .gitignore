@@ -2,3 +2,6 @@
 /dataset/
 
 /similarity/images/
+
+# OS Files
+**/.DS_Store
