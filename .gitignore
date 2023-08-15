@@ -4,3 +4,10 @@
 # Dataset
 /dataset/
 /similarity/images/
+
+# Cache
+__pycache__/
+
+# OS Files
+# MacOS
+**/.DS_Store
