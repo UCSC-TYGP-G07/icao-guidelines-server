@@ -87,6 +87,7 @@ def grab_cut(image_path):
 
     if output_image is not None:
         variance_percentage, is_varied_bg = is_plain_colored_background(output_image)
+        round(variance_percentage, 3)
         data = {
             'variance_percentage': variance_percentage,
             'threshold': SIMILARITY_THRESHOLD,
