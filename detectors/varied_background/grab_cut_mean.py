@@ -5,6 +5,9 @@ import sys
 sys.path.append('../')
 import utilities as ut
 
+SIMILARITY_THRESHOLD = 90  # SIMILARITY COLOR THRESHOLD
+VARIANCE = 10
+
 
 def most_common_non_black_pixel(hist):
     non_black_hist = hist[1:]
@@ -12,7 +15,7 @@ def most_common_non_black_pixel(hist):
     return most_common_pixel_value
 
 
-def highlight_most_visible_color(background, most_common_pixel_value, variance=10):
+def highlight_most_visible_color(background, most_common_pixel_value, variance=VARIANCE):
     gray_background = cv2.cvtColor(background, cv2.COLOR_BGR2GRAY)
     lower_bound = max(0, most_common_pixel_value - variance)
     upper_bound = min(255, most_common_pixel_value + variance)
@@ -21,7 +24,7 @@ def highlight_most_visible_color(background, most_common_pixel_value, variance=1
     return highlighted_image
 
 
-def is_plain_colored_background(background, variance=10, threshold=90):
+def is_plain_colored_background(background, variance=VARIANCE, threshold=SIMILARITY_THRESHOLD):
     # Convert the background to grayscale
     gray_background = cv2.cvtColor(background, cv2.COLOR_BGR2GRAY)
 
@@ -49,7 +52,7 @@ def is_plain_colored_background(background, variance=10, threshold=90):
     percentage_within_variance = (highlighted_pixels / total_non_black_pixels) * 100
 
     # Check if the percentage within variance is above a threshold
-    return percentage_within_variance, percentage_within_variance >= threshold  # Adjust the threshold as needed
+    return percentage_within_variance, percentage_within_variance <= threshold  # Adjust the threshold as needed
 
 
 def get_background(image_path):
@@ -86,7 +89,7 @@ def grab_cut(image_path):
         variance_percentage, is_varied_bg = is_plain_colored_background(output_image)
         data = {
             'variance_percentage': variance_percentage,
-            'threshold': 90,
+            'threshold': SIMILARITY_THRESHOLD,
             'is_varied_bg': is_varied_bg,
         }
 
