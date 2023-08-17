@@ -4,6 +4,7 @@
 # Dataset
 /dataset/
 /similarity/images/
+detectors/images/
 
 # Cache
 __pycache__/
