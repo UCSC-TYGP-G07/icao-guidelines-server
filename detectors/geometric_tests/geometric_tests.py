@@ -1,4 +1,3 @@
-# STEP 1: Import the necessary modules.
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
@@ -15,7 +14,7 @@ DD_THRESHOLD = (0.35, 0.65)
 
 
 def get_face_landmarks(image_path):
-    model_path = os.path.join(dirname, "face_landmarker.task")
+    model_path = os.path.join(dirname, "../utilities/face_landmarker.task")
     base_options = python.BaseOptions(model_asset_path=model_path)
     options = vision.FaceLandmarkerOptions(
         base_options=base_options,
