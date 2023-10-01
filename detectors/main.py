@@ -3,10 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from blur.laplacian import laplacian
 from varied_background.grab_cut_mean import grab_cut
+from geometric_tests.geometric_tests import valid_geometric
 
-import shutil
+from PIL import Image
 import uuid
-import sys
 import os
 
 if not os.path.isdir("./images/"):
@@ -45,15 +45,19 @@ def validate_image(file: UploadFile):
     image_name = str(uuid.uuid4()) + '.' + file_type
     image_path = f"./images/{image_name}"
 
-    # Saving the files in image directory
-    with open(image_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    with Image.open(file.file) as image:
+        # Convert image to RGB color space
+        image = image.convert('RGB')
+
+        # Save the image in a standard format (e.g., JPEG)
+        with open(image_path, 'wb') as buffer:
+            image.save(buffer, 'JPEG')
 
     return image_path
 
 
 @app.post("/blur_detection")
-async def match_similarities(file: UploadFile):
+async def blur_detection(file: UploadFile):
     image_path = validate_image(file)
     is_blurred, var = laplacian.laplacian_filter(image_path)
 
@@ -64,7 +68,7 @@ async def match_similarities(file: UploadFile):
 
 
 @app.post("/varied_bg")
-async def match_similarities(file: UploadFile):
+async def varied_bg(file: UploadFile):
     image_path = validate_image(file)
     is_varied_bg, variance_percentage = grab_cut(image_path)
 
@@ -74,11 +78,22 @@ async def match_similarities(file: UploadFile):
     }
 
 
+@app.post("/valid_geometric")
+async def geometric_validation(file: UploadFile):
+    image_path = validate_image(file)
+    response = valid_geometric(image_path)
+
+    return {
+        "geometric": response
+    }
+
+
 @app.post("/icao_validate")
 async def icao_validate(file: UploadFile):
     image_path = validate_image(file)
     is_varied_bg, variance_percentage = grab_cut(image_path)
     is_blurred, var = laplacian.laplacian_filter(image_path)
+    is_valid_geometric = valid_geometric(image_path)
 
     return {
         'is_icao_compliant': not is_varied_bg and not is_blurred,
@@ -89,6 +104,7 @@ async def icao_validate(file: UploadFile):
         "varied_bg": {
             "is_varied_bg": is_varied_bg,
             "bg_variance_percentage": variance_percentage
-        }
+        },
+        "valid_geometric": is_valid_geometric
     }
 
