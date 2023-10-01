@@ -57,7 +57,7 @@ def validate_image(file: UploadFile):
 
 
 @app.post("/blur_detection")
-async def match_similarities(file: UploadFile):
+async def blur_detection(file: UploadFile):
     image_path = validate_image(file)
     is_blurred, var = laplacian.laplacian_filter(image_path)
 
@@ -68,7 +68,7 @@ async def match_similarities(file: UploadFile):
 
 
 @app.post("/varied_bg")
-async def match_similarities(file: UploadFile):
+async def varied_bg(file: UploadFile):
     image_path = validate_image(file)
     is_varied_bg, variance_percentage = grab_cut(image_path)
 
