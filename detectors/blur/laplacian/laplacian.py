@@ -20,11 +20,11 @@ def laplacian_variance(image):
 
 def laplacian_filter(image_name):
     image = cv2.imread(image_name)
-    var = laplacian_variance(image)
-    is_blurred = is_image_blurry(var)
+    variance = laplacian_variance(image)
+    is_blurred = is_image_blurry(variance)
 
     data = {
-        'laplace variance': var,
+        'laplace variance': variance,
         'threshold': THRESHOLD,
         'is_blurred': is_blurred,
     }
@@ -35,4 +35,4 @@ def laplacian_filter(image_name):
         data
     )
 
-    return is_blurred, var
+    return is_blurred, variance

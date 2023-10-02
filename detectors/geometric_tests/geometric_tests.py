@@ -1,3 +1,6 @@
+import sys
+import time
+
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
@@ -70,12 +73,13 @@ def valid_geometric(image_path):
     # Geometric test - Head image height ratio
     hihr_check = geometric_test_head_image_height_ratio(face_landmarks)
 
-    data = {
-        "valid": vp_check and hp_check and hiwr_check and hihr_check,
+    is_valid = vp_check and hp_check and hiwr_check and hihr_check
+
+    tests = {
         "vertical_position": vp_check,
         "horizontal_position": hp_check,
         "head_image_width_ratio": hiwr_check,
         "head_image_height_ratio": hihr_check
     }
 
-    return data
+    return is_valid, tests

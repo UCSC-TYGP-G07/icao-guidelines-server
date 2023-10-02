@@ -1,3 +1,5 @@
+import time
+
 from fastapi import status, FastAPI, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -13,7 +15,7 @@ import os
 class ICAOPhotoValidator:
     def __init__(self, file: UploadFile, tests: list = None):
         self.file = file
-        self.pipeline = {}
+        self.pipeline = {}  # Stores the results of the tests
         self.paths = {}  # Stores the paths of the images (original_image, resized_image)
         self.tests = tests
 
@@ -78,17 +80,18 @@ class ICAOPhotoValidator:
     # Functions for running the tests
     def _validate_blurring(self):
         is_blurred, blur_var = laplacian.laplacian_filter(self.paths["original_image"])
-        return {"is_blur": is_blurred, "laplacian_variance_value": blur_var}
+        return {"is_passed": not is_blurred, "laplacian_variance_value": blur_var}
 
     def _validate_varied_bg(self):
         is_varied_bg, bg_var = grab_cut(self.paths["resized_image"])
-        return {"is_varied_bg": is_varied_bg, "bg_variance_percentage": bg_var}
+        return {"is_passed": not is_varied_bg, "bg_variance_percentage": bg_var}
 
     def _validate_geometry(self):
         is_valid_geometric, geometric_tests = valid_geometric(self.paths["original_image"])
-        return {"is_valid_geometric": is_valid_geometric, "geometric_tests_passed": geometric_tests}
+        return {"is_passed": is_valid_geometric, "geometric_tests_passed": geometric_tests}
 
     def validate(self):
+        print("Running ICAO photo validation pipeline")
         # Mapping of test names to corresponding validation methods
         validation_methods = {
             "valid_geometric": self._validate_geometry,  # ICAO-4, ICAO-5, ICAO-6, ICAO-7
@@ -105,17 +108,23 @@ class ICAOPhotoValidator:
             error_message = f"Error during pre-processing input image: {str(e)}"
             return {"error": error_message}
 
-        # If tests list is empty, run all tests
+        self.pipeline["all_passed"] = True
+
+        # If tests list is None, run all tests
         tests_to_run = self.tests if self.tests else validation_methods.keys()
 
         for test_name in tests_to_run:
             validation_method = validation_methods.get(test_name)
             if validation_method:
                 try:
+                    start = time.time()
                     result = validation_method()  # Run the validation method, which returns a dict
-                    self.pipeline.setdefault(test_name, {}).update(result)  # Update the result in the pipeline
+                    end = time.time()
+                    result["time_elapsed"] = round(end - start, 3)
+                    self.pipeline.setdefault('tests', {}).setdefault(test_name, {}).update(result)  # Update the
+                    # result in the pipeline
 
-                    if result.get("is_passed", False):
+                    if result["is_passed"] is False:
                         self.pipeline["all_passed"] = False
 
                         # Uncomment the following line to stop the testing and return if a single test fails
