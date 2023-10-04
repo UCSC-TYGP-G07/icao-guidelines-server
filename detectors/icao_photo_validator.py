@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from blur.laplacian import laplacian
 from varied_background.grab_cut_mean import grab_cut
 from geometric_tests.geometric_tests import valid_geometric
+from utilities.mp_face import get_num_faces, get_face_landmarks
 
 from PIL import Image
 import uuid
@@ -15,6 +16,7 @@ import os
 class ICAOPhotoValidator:
     def __init__(self, file: UploadFile, tests: list = None):
         self.file = file
+        self.data = {}  # Stores the data such as face_landmarks, etc.
         self.pipeline = {}  # Stores the results of the tests
         self.paths = {}  # Stores the paths of the images (original_image, resized_image)
         self.tests = tests
@@ -77,6 +79,25 @@ class ICAOPhotoValidator:
 
         self.paths["resized_image"] = destination_path
 
+    def _detect_face(self):
+        num_faces = get_num_faces(self.paths["original_image"])
+        if num_faces == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No face detected in the image."
+            )
+        elif num_faces > 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="More than one face detected in the image."
+            )
+
+        self.data["num_faces"] = num_faces
+
+    def _get_face_landmarks(self):
+        face_landmarks = get_face_landmarks(self.paths["original_image"])
+        self.data.setdefault("face", {}).update({"all_landmarks": face_landmarks})
+
     # Functions for running the tests
     def _validate_blurring(self):
         is_blurred, blur_var = laplacian.laplacian_filter(self.paths["original_image"])
@@ -102,6 +123,8 @@ class ICAOPhotoValidator:
         # Pre-process the input file before running the tests
         self._validate_file()
         self._resize_image()
+        self._detect_face()
+        self._get_face_landmarks()
 
         self.pipeline["all_passed"] = True
 
