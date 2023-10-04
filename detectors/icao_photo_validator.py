@@ -94,19 +94,14 @@ class ICAOPhotoValidator:
         print("Running ICAO photo validation pipeline")
         # Mapping of test names to corresponding validation methods
         validation_methods = {
-            "valid_geometric": self._validate_geometry,  # ICAO-4, ICAO-5, ICAO-6, ICAO-7
+            "geometry": self._validate_geometry,  # ICAO-4, ICAO-5, ICAO-6, ICAO-7
             "blurring": self._validate_blurring,  # ICAO-8
             "varied_bg": self._validate_varied_bg,  # ICAO-17
         }
 
-        try:
-            # Pre-process the input file before running the tests
-            self._validate_file()
-            self._resize_image()
-
-        except Exception as e:
-            error_message = f"Error during pre-processing input image: {str(e)}"
-            return {"error": error_message}
+        # Pre-process the input file before running the tests
+        self._validate_file()
+        self._resize_image()
 
         self.pipeline["all_passed"] = True
 
