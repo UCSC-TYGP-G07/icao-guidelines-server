@@ -63,6 +63,21 @@ def get_face_landmarks(image_path):
     return detection_result.face_landmarks[0]
 
 
+def get_mp_face_region(image_path, face_landmarks):
+    # Read the input image
+    image = cv2.imread(image_path)
+    # Get image height and width
+    image_height, image_width = image.shape
+
+    # Get the coordinates of the face region
+    mp_left = face_landmarks[234].x * image_width
+    mp_right = face_landmarks[454].x * image_width
+    mp_top = face_landmarks[10].y * image_height
+    mp_bottom = face_landmarks[152].y * image_height
+
+    return [(mp_left, mp_top), (mp_right, mp_top), (mp_right, mp_bottom), (mp_left, mp_bottom)]
+
+
 def draw_landmarks_on_image(rgb_image, detection_result):
     face_landmarks_list = detection_result.face_landmarks
     annotated_image = np.copy(rgb_image)

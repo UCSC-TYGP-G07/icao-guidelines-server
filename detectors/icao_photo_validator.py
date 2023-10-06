@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from blur.laplacian import laplacian
 from varied_background.grab_cut_mean import grab_cut
 from geometric_tests.geometric_tests import valid_geometric
-from utilities.mp_face import get_num_faces, get_face_landmarks
+from utilities.mp_face import get_num_faces, get_face_landmarks, get_mp_face_region
 
 from PIL import Image
 import uuid
@@ -98,6 +98,10 @@ class ICAOPhotoValidator:
         face_landmarks = get_face_landmarks(self.paths["original_image"])
         self.data.setdefault("face", {}).update({"all_landmarks": face_landmarks})
 
+    def _get_face_region(self):
+        mp_face_region = get_mp_face_region(self.paths["original_image"], self.data["face"]["all_landmarks"])
+        self.data.setdefault("face", {}).update({"mp_region_coords": mp_face_region})
+
     # Functions for running the tests
     def _validate_blurring(self):
         is_blurred, blur_var = laplacian.laplacian_filter(self.paths["original_image"])
@@ -108,7 +112,8 @@ class ICAOPhotoValidator:
         return {"is_passed": not is_varied_bg, "bg_variance_percentage": bg_var}
 
     def _validate_geometry(self):
-        is_valid_geometric, geometric_tests = valid_geometric(self.paths["original_image"])
+        is_valid_geometric, geometric_tests = valid_geometric(self.paths["original_image"],
+                                                              self.data["face"]["all_landmarks"])
         return {"is_passed": is_valid_geometric, "geometric_tests_passed": geometric_tests}
 
     def validate(self):
@@ -125,6 +130,7 @@ class ICAOPhotoValidator:
         self._resize_image()
         self._detect_face()
         self._get_face_landmarks()
+        self._get_face_region()
 
         self.pipeline["all_passed"] = True
 
