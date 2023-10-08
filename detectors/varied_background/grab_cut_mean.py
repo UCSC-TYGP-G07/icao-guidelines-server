@@ -60,31 +60,33 @@ def is_varied_background(background, variance=VARIANCE, threshold=SIMILARITY_THR
     return percentage_within_variance, percentage_within_variance <= threshold  # Adjust the threshold as needed
 
 
-def get_background(image_path, face_landmarks, init_method='rect'):
-    # Load the image
-    image = cv2.imread(image_path)
+def _get_background_using_rect(image, bgdModel, fgdModel):
+    # Create a mask (initialized as background)
+    mask = np.zeros(image.shape[:2], np.uint8) + cv2.GC_PR_BGD
+
+    # Define a rectangle around the object to help GrabCut initialize
+    rect = (10, 10, image.shape[1] - 20, image.shape[0])
+
+    # Apply GrabCut algorithm
+    cv2.grabCut(image, mask, rect, bgdModel, fgdModel, 10, cv2.GC_INIT_WITH_RECT)
+
+    # Modify the mask to consider certain regions as probable foreground
+    mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
+
+    # Multiply the mask with the input image to get the foreground
+    foreground = image * mask2[:, :, np.newaxis]
+    background = image - foreground
+    return background
+
+
+def _get_background_using_mask(image, bgdModel, fgdModel, include_face, face_landmarks):
+    image_width = image.shape[1]
+    image_height = image.shape[0]
 
     # Create a mask (initialized as background)
-    mask = np.zeros(image.shape[:2], np.uint8)
+    mask = np.zeros(image.shape[:2], np.uint8) + cv2.GC_PR_BGD
 
-    # Create background and foreground models for GrabCut
-    bgdModel = np.zeros((1, 65), np.float64)
-    fgdModel = np.zeros((1, 65), np.float64)
-
-    if (init_method == 'rect'):
-        # Define a rectangle around the object to help GrabCut initialize
-        rect = (10, 10, image.shape[1] - 20, image.shape[0])
-
-        # Apply GrabCut algorithm
-        cv2.grabCut(image, mask, rect, bgdModel, fgdModel, 10, cv2.GC_INIT_WITH_RECT)
-
-    else:
-        image_width = image.shape[1]
-        image_height = image.shape[0]
-
-        # Create a mask (initialized as background)
-        mask = np.zeros(image.shape[:2], np.uint8) + cv2.GC_PR_BGD
-
+    if include_face:
         # Draw circles on mask to represent face
         # Top part of face
         midpoint1 = (int(face_landmarks[151].x * image_width), int(face_landmarks[151].y * image_height))
@@ -96,18 +98,16 @@ def get_background(image_path, face_landmarks, init_method='rect'):
         radius2 = int(face_landmarks[1].x * image_width) - int(face_landmarks[205].x * image_width)
         cv2.circle(mask, midpoint2, radius2, cv2.GC_FGD, thickness=cv2.FILLED)
 
-        # Triangular region to show body
-        body_mask = [(0, image_height),
-                     (int(face_landmarks[152].x * image_width), int(face_landmarks[152].y * image_height)),
-                     (image_width, image_height)]
+    # Triangular region to show body
+    body_mask = [(0, image_height),
+                 (int(face_landmarks[152].x * image_width), int(face_landmarks[152].y * image_height)),
+                 (image_width, image_height)]
 
-        # Add the body mask
-        cv2.drawContours(mask, [np.array(body_mask)], 0, cv2.GC_FGD, thickness=cv2.FILLED)
+    # Add the body mask
+    cv2.drawContours(mask, [np.array(body_mask)], 0, cv2.GC_FGD, thickness=cv2.FILLED)
 
-        # Apply GrabCut algorithm
-        cv2.grabCut(image, mask, None, bgdModel, fgdModel, 5, cv2.GC_INIT_WITH_MASK)
-
-        # save an image with the mask applied on the original image
+    # Apply GrabCut algorithm
+    cv2.grabCut(image, mask, None, bgdModel, fgdModel, 5, cv2.GC_INIT_WITH_MASK)
 
     # Modify the mask to consider certain regions as probable foreground
     mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
@@ -115,6 +115,27 @@ def get_background(image_path, face_landmarks, init_method='rect'):
     # Multiply the mask with the input image to get the foreground
     foreground = image * mask2[:, :, np.newaxis]
     background = image - foreground
+    return background
+
+
+def get_background(image_path, face_landmarks, init_method='both'):
+    # Load the image
+    image = cv2.imread(image_path)
+
+    # Create background and foreground models for GrabCut
+    bgdModel = np.zeros((1, 65), np.float64)
+    fgdModel = np.zeros((1, 65), np.float64)
+
+    if init_method == 'rect':
+        final_bg = _get_background_using_rect(image, bgdModel, fgdModel)
+
+    elif init_method == 'mask':
+        final_bg = _get_background_using_mask(image, bgdModel, fgdModel, True, face_landmarks)
+
+    else:
+        background1 = _get_background_using_rect(image, bgdModel, fgdModel)
+        background2 = _get_background_using_mask(background1, bgdModel, fgdModel, False, face_landmarks)
+        final_bg = background2
 
     image_name = os.path.basename(image_path)
     destination_path = f"./images/separated-bg/{image_name}"
@@ -123,9 +144,9 @@ def get_background(image_path, face_landmarks, init_method='rect'):
     os.makedirs(os.path.dirname(destination_path), exist_ok=True)
 
     # save background as new image
-    cv2.imwrite(destination_path, background)
+    cv2.imwrite(destination_path, final_bg)
 
-    return background
+    return final_bg
 
 
 def grab_cut(image_path, all_landmarks):

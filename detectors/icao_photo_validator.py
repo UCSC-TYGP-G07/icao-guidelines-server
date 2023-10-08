@@ -62,7 +62,7 @@ class ICAOPhotoValidator:
         self.paths["original_image"] = destination_path
 
     def _resize_image(self):
-        max_resized_width = 512
+        max_resized_width = 320
 
         image_name = os.path.basename(self.paths["original_image"])
         destination_path = f"./images/resized/{image_name}"
