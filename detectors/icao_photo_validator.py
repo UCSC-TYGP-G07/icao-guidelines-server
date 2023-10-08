@@ -108,7 +108,7 @@ class ICAOPhotoValidator:
         return {"is_passed": not is_blurred, "laplacian_variance_value": blur_var}
 
     def _validate_varied_bg(self):
-        is_varied_bg, bg_var = grab_cut(self.paths["resized_image"])
+        is_varied_bg, bg_var = grab_cut(self.paths["resized_image"], self.data["face"]["all_landmarks"])
         return {"is_passed": not is_varied_bg, "bg_variance_percentage": bg_var}
 
     def _validate_geometry(self):
