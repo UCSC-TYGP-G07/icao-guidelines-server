@@ -149,16 +149,30 @@ def get_background(image_path, face_landmarks, init_method='both'):
     return final_bg
 
 
-def grab_cut(image_path, all_landmarks):
+def check_single_color(bg_image, tolerance=20):
+    # Convert the image to grayscale
+    gray_image = cv2.cvtColor(bg_image, cv2.COLOR_BGR2GRAY)
+
+    # Calculate the mean color value
+    mean_color = np.mean(gray_image)
+
+    # Check if all pixel values are close to the mean within the specified tolerance
+    is_single_color = np.all(np.abs(gray_image - mean_color) < tolerance)
+
+    return is_single_color
+
+
+def check_varied_bg(image_path, all_landmarks):
     background = get_background(image_path, all_landmarks)
 
     if background is not None:
         variance_percentage, is_varied_bg = is_varied_background(background)
+        is_single_color = check_single_color(background)
         round(variance_percentage, 3)
         data = {
             'variance_percentage': variance_percentage,
             'threshold': SIMILARITY_THRESHOLD,
-            'is_varied_bg': is_varied_bg,
+            'is_varied_bg': is_varied_bg and not is_single_color,
         }
 
         # ut.logger(
@@ -174,7 +188,7 @@ def grab_cut(image_path, all_landmarks):
 if __name__ == '__main__':
     image_path = sys.argv[1]
     start = time.time()
-    is_varied_bg, variance_percentage = grab_cut(image_path)
+    is_varied_bg, variance_percentage = check_varied_bg(image_path)
     end = time.time()
     print(f"Time elapsed: {end - start}")
     print(f"Is varied background: {is_varied_bg}")
