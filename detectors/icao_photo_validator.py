@@ -4,7 +4,7 @@ from fastapi import status, FastAPI, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 
 from blur.laplacian import laplacian
-from varied_background.grab_cut_mean import grab_cut
+from varied_background.grab_cut_mean import check_varied_bg
 from geometric_tests.geometric_tests import valid_geometric
 from utilities.mp_face import get_num_faces, get_face_landmarks, get_mp_face_region
 
@@ -108,7 +108,7 @@ class ICAOPhotoValidator:
         return {"is_passed": not is_blurred, "laplacian_variance_value": blur_var}
 
     def _validate_varied_bg(self):
-        is_varied_bg, bg_var = grab_cut(self.paths["resized_image"], self.data["face"]["all_landmarks"])
+        is_varied_bg, bg_var = check_varied_bg(self.paths["resized_image"], self.data["face"]["all_landmarks"])
         return {"is_passed": not is_varied_bg, "bg_variance_percentage": bg_var}
 
     def _validate_geometry(self):

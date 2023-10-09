@@ -2,7 +2,7 @@ from fastapi import status, FastAPI, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 
 from blur.laplacian import laplacian
-from varied_background.grab_cut_mean import grab_cut
+from varied_background.grab_cut_mean import check_varied_bg
 from geometric_tests.geometric_tests import valid_geometric
 
 from PIL import Image
@@ -56,55 +56,61 @@ def validate_image(file: UploadFile):
     return image_path
 
 
-@app.post("/blur_detection")
-async def blur_detection(file: UploadFile):
+@app.post("/validate_blurring")
+async def validate_blurring(file: UploadFile):
     image_path = validate_image(file)
-    is_blurred, var = laplacian.laplacian_filter(image_path)
+    is_blurred, laplacian_variance  = laplacian.laplacian_filter(image_path)
 
     return {
-        "is_blur": is_blurred,
-        "var": var
+        "is_passed": not is_blurred,
+        "laplacian_variance": laplacian_variance  # lower means blurred, higher means sharp
     }
 
 
-@app.post("/varied_bg")
-async def varied_bg(file: UploadFile):
+@app.post("/validate_varied_bg")
+async def validate_varied_bg(file: UploadFile):
     image_path = validate_image(file)
-    is_varied_bg, variance_percentage = grab_cut(image_path)
+    is_varied_bg, variance_percentage = check_varied_bg(image_path)
 
     return {
-        "is_varied_bg": is_varied_bg,
-        "bg_variance_percentage": variance_percentage
+        "is_passed": not is_varied_bg,
+        "bg_variance_percentage": variance_percentage  # lower means varied bg, higher means plain bg
     }
 
 
-@app.post("/valid_geometric")
-async def geometric_validation(file: UploadFile):
+@app.post("/validate_geometry")
+async def validate_geometry(file: UploadFile):
     image_path = validate_image(file)
-    response = valid_geometric(image_path)
+    is_valid, tests = valid_geometric(image_path)
 
     return {
-        "geometric": response
+        "is_passed": is_valid,
+        "passed_tests": tests
     }
 
 
-@app.post("/icao_validate")
-async def icao_validate(file: UploadFile):
+@app.post("/validate_icao")
+async def validate_icao(file: UploadFile):
     image_path = validate_image(file)
-    is_varied_bg, variance_percentage = grab_cut(image_path)
+    is_varied_bg, variance_percentage = check_varied_bg(image_path)
     is_blurred, var = laplacian.laplacian_filter(image_path)
     is_valid_geometric = valid_geometric(image_path)
 
     return {
-        'is_icao_compliant': not is_varied_bg and not is_blurred,
-        "blur": {
-            "is_blur": is_blurred,
-            "var": var
-        },
-        "varied_bg": {
-            "is_varied_bg": is_varied_bg,
-            "bg_variance_percentage": variance_percentage
-        },
-        "valid_geometric": is_valid_geometric
+        "image_filename": file.filename,
+        "is_icao_compliant": not is_varied_bg and not is_blurred,
+        "tests": {
+            "blur": {
+                "is_blur": is_blurred,
+                "var": var
+            },
+            "varied_bg": {
+                "is_varied_bg": is_varied_bg,
+                "bg_variance_percentage": variance_percentage
+            },
+            "valid_geometric": is_valid_geometric
+        }
+        # inside tests, put the results of the tests by calling each function
+
     }
 

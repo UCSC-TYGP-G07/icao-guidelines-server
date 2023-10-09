@@ -67,7 +67,7 @@ def get_mp_face_region(image_path, face_landmarks):
     # Read the input image
     image = cv2.imread(image_path)
     # Get image height and width
-    image_height, image_width = image.shape
+    image_height, image_width, _ = image.shape
 
     # Get the coordinates of the face region
     mp_left = face_landmarks[234].x * image_width
