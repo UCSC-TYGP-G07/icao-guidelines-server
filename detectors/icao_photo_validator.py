@@ -7,6 +7,7 @@ from blur.laplacian import laplacian
 from varied_background.grab_cut_mean import check_varied_bg
 from geometric_tests.geometric_tests import valid_geometric
 from utilities.mp_face import get_num_faces, get_face_landmarks, get_mp_face_region
+from utilities.core_points_marker import get_core_face_points
 
 from PIL import Image
 import uuid
@@ -102,6 +103,10 @@ class ICAOPhotoValidator:
         mp_face_region = get_mp_face_region(self.paths["original_image"], self.data["face"]["all_landmarks"])
         self.data.setdefault("face", {}).update({"mp_region_coords": mp_face_region})
 
+    def _get_face_core_points(self):
+        face_core_points = get_core_face_points(self.paths["original_image"], self.data["face"]["all_landmarks"])
+        self.data.setdefault("face", {}).update({"core_points": face_core_points})
+
     # Functions for running the tests
     def _validate_blurring(self):
         is_blurred, blur_var = laplacian.laplacian_filter(self.paths["original_image"])
@@ -113,7 +118,7 @@ class ICAOPhotoValidator:
 
     def _validate_geometry(self):
         is_valid_geometric, geometric_tests = valid_geometric(self.paths["original_image"],
-                                                              self.data["face"]["all_landmarks"])
+                                                              self.data["face"])
         return {"is_passed": is_valid_geometric, "geometric_tests_passed": geometric_tests}
 
     def validate(self):
@@ -131,6 +136,7 @@ class ICAOPhotoValidator:
         self._detect_face()
         self._get_face_landmarks()
         self._get_face_region()
+        self._get_face_core_points()
 
         self.pipeline["all_passed"] = True
 
