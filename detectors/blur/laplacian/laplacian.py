@@ -1,6 +1,5 @@
-import utilities as ut
+# from ...utilities import common as ut
 import cv2
-
 
 THRESHOLD = 75
 LOGGER_PATH = "./blur/laplacian.csv"
@@ -20,19 +19,19 @@ def laplacian_variance(image):
 
 def laplacian_filter(image_name):
     image = cv2.imread(image_name)
-    var = laplacian_variance(image)
-    is_blurred = is_image_blurry(var)
+    variance = laplacian_variance(image)
+    is_blurred = is_image_blurry(variance)
 
     data = {
-        'laplace variance': var,
+        'laplace variance': variance,
         'threshold': THRESHOLD,
         'is_blurred': is_blurred,
     }
 
-    ut.logger(
-        LOGGER_PATH,
-        image_name,
-        data
-    )
+    # ut.logger(
+    #     LOGGER_PATH,
+    #     image_name,
+    #     data
+    # )
 
-    return is_blurred, var
+    return is_blurred, variance
