@@ -33,7 +33,7 @@ def get_num_faces(image_path):
     return num_faces
 
 
-def get_face_landmarks(image_path):
+def get_face_landmarks_and_blendshapes(image_path):
     # Create an FaceLandmarker object
     base_options = python.BaseOptions(model_asset_path='utilities/face_landmarker_v2_with_blendshapes.task')
     options = vision.FaceLandmarkerOptions(base_options=base_options,
@@ -60,7 +60,7 @@ def get_face_landmarks(image_path):
 
     cv2.imwrite(destination_path, cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR))
 
-    return detection_result.face_landmarks[0]
+    return detection_result.face_landmarks[0], detection_result.face_blendshapes[0]
 
 
 def get_mp_face_region(image_path, face_landmarks):

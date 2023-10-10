@@ -4,9 +4,10 @@ from fastapi import status, FastAPI, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 
 from blur.laplacian import laplacian
+from eyes.eye_tests import check_eyes_open
 from varied_background.grab_cut_mean import check_varied_bg
 from geometric_tests.geometric_tests import valid_geometric
-from utilities.mp_face import get_num_faces, get_face_landmarks, get_mp_face_region
+from utilities.mp_face import get_num_faces, get_mp_face_region, get_face_landmarks_and_blendshapes
 from utilities.core_points_marker import get_core_face_points
 
 from PIL import Image
@@ -95,9 +96,9 @@ class ICAOPhotoValidator:
 
         self.data["num_faces"] = num_faces
 
-    def _get_face_landmarks(self):
-        face_landmarks = get_face_landmarks(self.paths["original_image"])
-        self.data.setdefault("face", {}).update({"all_landmarks": face_landmarks})
+    def _get_face_landmarks_and_blendshapes(self):
+        face_landmarks, face_blendshapes = get_face_landmarks_and_blendshapes(self.paths["original_image"])
+        self.data.setdefault("face", {}).update({"all_landmarks": face_landmarks, "blendshapes": face_blendshapes})
 
     def _get_face_region(self):
         mp_face_region = get_mp_face_region(self.paths["original_image"], self.data["face"]["all_landmarks"])
@@ -121,6 +122,10 @@ class ICAOPhotoValidator:
                                                               self.data["face"])
         return {"is_passed": is_valid_geometric, "geometric_tests_passed": geometric_tests}
 
+    def _validate_eyes_closed(self):
+        is_both_open, open_probabilities = check_eyes_open(self.data["face"])
+        return {"is_passed": is_both_open, "open_probabilities": open_probabilities}
+
     def validate(self):
         print("Running ICAO photo validation pipeline")
         # Mapping of test names to corresponding validation methods
@@ -128,13 +133,14 @@ class ICAOPhotoValidator:
             "geometry": self._validate_geometry,  # ICAO-4, ICAO-5, ICAO-6, ICAO-7
             "blurring": self._validate_blurring,  # ICAO-8
             "varied_bg": self._validate_varied_bg,  # ICAO-17
+            "eyes_closed": self._validate_eyes_closed,  # ICAO-16
         }
 
         # Pre-process the input file before running the tests
         self._validate_file()
         self._resize_image()
         self._detect_face()
-        self._get_face_landmarks()
+        self._get_face_landmarks_and_blendshapes()
         self._get_face_region()
         self._get_face_core_points()
 
