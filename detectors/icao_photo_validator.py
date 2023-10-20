@@ -4,7 +4,7 @@ from fastapi import status, FastAPI, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 
 from blur.laplacian import laplacian
-from eyes.eye_tests import check_eyes_open
+from eyes.eye_tests import check_eyes_open, check_looking_away
 from varied_background.grab_cut_mean import check_varied_bg
 from geometric_tests.geometric_tests import valid_geometric
 from utilities.mp_face import get_num_faces, get_mp_face_region, get_face_landmarks_and_blendshapes
@@ -126,6 +126,16 @@ class ICAOPhotoValidator:
         is_both_open, open_probabilities = check_eyes_open(self.data["face"])
         return {"is_passed": is_both_open, "open_probabilities": open_probabilities}
 
+    def _validate_looking_away(self):
+        if not self.pipeline.get("tests", {}).get("eyes_closed"):
+            raise Exception("Eyes open test not done, cannot run looking away test.")
+
+        if not self.pipeline.get("tests", {}).get("eyes_closed", {}).get("is_passed"):
+            raise Exception("Eyes open test failed, cannot run looking away test.")
+
+        is_looking_at_camera, gaze_directions = check_looking_away(self.data["face"])
+        return {"is_passed": is_looking_at_camera, "gaze_directions": gaze_directions}
+
     def validate(self):
         print("Running ICAO photo validation pipeline")
         # Mapping of test names to corresponding validation methods
@@ -134,6 +144,7 @@ class ICAOPhotoValidator:
             "blurring": self._validate_blurring,  # ICAO-8
             "varied_bg": self._validate_varied_bg,  # ICAO-17
             "eyes_closed": self._validate_eyes_closed,  # ICAO-16
+            "looking_away": self._validate_looking_away,  # ICAO-9
         }
 
         # Pre-process the input file before running the tests
