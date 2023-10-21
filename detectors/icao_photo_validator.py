@@ -4,6 +4,7 @@ from fastapi import status, FastAPI, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 
 from blur.laplacian import laplacian
+from face.face_tests import check_illumination_intensity
 from eyes.eye_tests import check_eyes_open, check_looking_away
 from varied_background.grab_cut_mean import check_varied_bg
 from geometric_tests.geometric_tests import valid_geometric
@@ -136,6 +137,10 @@ class ICAOPhotoValidator:
         is_looking_at_camera, gaze_directions = check_looking_away(self.data["face"])
         return {"is_passed": is_looking_at_camera, "gaze_directions": gaze_directions}
 
+    def _validate_illumination_intensity(self):
+        is_passed, mean_rgb_intensity_values = check_illumination_intensity(self.paths["original_image"], self.data["face"])
+        return {"is_passed": is_passed, "mean_rgb_intensity_values": mean_rgb_intensity_values}
+
     def validate(self):
         print("Running ICAO photo validation pipeline")
         # Mapping of test names to corresponding validation methods
@@ -145,6 +150,7 @@ class ICAOPhotoValidator:
             "varied_bg": self._validate_varied_bg,  # ICAO-17
             "eyes_closed": self._validate_eyes_closed,  # ICAO-16
             "looking_away": self._validate_looking_away,  # ICAO-9
+            "illumination_intensity": self._validate_illumination_intensity  # ICAO-19, ICAO-22
         }
 
         # Pre-process the input file before running the tests
