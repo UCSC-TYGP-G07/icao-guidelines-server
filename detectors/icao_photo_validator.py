@@ -9,7 +9,7 @@ from eyes.eye_tests import check_eyes_open, check_looking_away
 from varied_background.grab_cut_mean import check_varied_bg
 from geometric_tests.geometric_tests import valid_geometric
 from utilities.mp_face import get_num_faces, get_mp_face_region, get_face_landmarks_and_blendshapes
-from utilities.core_points_marker import get_core_face_points
+from utilities.core_points_marker import get_core_face_points, get_face_guidelines
 
 from PIL import Image
 import uuid
@@ -40,10 +40,10 @@ class ICAOPhotoValidator:
                 status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
                 detail=f"Input file type is not supported, supported image formats are {str(valid_types)}."
             )
-        if self.file.size > 5 * 1000 * 1000:
+        if self.file.size > 10 * 1000 * 1000:
             raise HTTPException(
                 status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                detail="Input file size is too large, max file size allowed is 5MB."
+                detail="Input file size is too large, max file size allowed is 10MB."
             )
 
         image_name = str(uuid.uuid4()) + '.' + file_type
@@ -105,9 +105,12 @@ class ICAOPhotoValidator:
         mp_face_region = get_mp_face_region(self.paths["original_image"], self.data["face"]["all_landmarks"])
         self.data.setdefault("face", {}).update({"mp_region_coords": mp_face_region})
 
-    def _get_face_core_points(self):
+    def _get_face_core_points_and_guides(self):
         face_core_points = get_core_face_points(self.paths["original_image"], self.data["face"]["all_landmarks"])
         self.data.setdefault("face", {}).update({"core_points": face_core_points})
+
+        face_guidelines = get_face_guidelines(self.paths["original_image"], self.data["face"])
+        self.data.setdefault("face", {}).update({"guidelines": face_guidelines})
 
     # Functions for running the tests
     def _validate_blurring(self):
@@ -159,7 +162,7 @@ class ICAOPhotoValidator:
         self._detect_face()
         self._get_face_landmarks_and_blendshapes()
         self._get_face_region()
-        self._get_face_core_points()
+        self._get_face_core_points_and_guides()
 
         self.pipeline["all_passed"] = True
 
