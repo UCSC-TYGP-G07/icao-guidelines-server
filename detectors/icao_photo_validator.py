@@ -9,7 +9,7 @@ from eyes.eye_tests import check_eyes_open, check_looking_away
 from varied_background.grab_cut_mean import check_varied_bg
 from geometric_tests.geometric_tests import valid_geometric
 from utilities.mp_face import get_num_faces, get_mp_face_region, get_face_landmarks_and_blendshapes
-from utilities.core_points_marker import get_core_face_points, get_face_guidelines
+from utilities.points_and_guides_marker import get_core_face_points, get_face_guidelines
 
 from PIL import Image
 import uuid
