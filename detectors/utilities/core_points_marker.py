@@ -1,3 +1,4 @@
+import os
 import cv2
 
 
@@ -53,9 +54,13 @@ def get_face_guidelines(image_path, face_data):
               }
 
     # Draw line_v on image and save image
-    cv2.line(image, (top_endpoint[0], 0), (bottom_endpoint[0], image_height), (0, 255, 255), 2)
-    guides_image_path = f"./images/guidelines/{image_path.split('/')[-1]}"
-    cv2.imwrite(guides_image_path, image)
+    cv2.line(image, (top_endpoint[0], 0), (bottom_endpoint[0], image_height), (0, 255, 0), 2)
+
+    guides_image_path = "./images/guidelines/"
+    if not os.path.isdir(guides_image_path):
+        os.makedirs(guides_image_path)
+
+    cv2.imwrite(guides_image_path + image_path.split('/')[-1], image)
 
     return {
         "line_v": line_v

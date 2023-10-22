@@ -1,3 +1,4 @@
+import os
 import cv2
 import numpy as np
 
@@ -35,9 +36,12 @@ def get_measurement_zone_coordinates(image_path, face_data):
         cv2.circle(image, (center_x, center_y), 5, (0, 0, 255), -1)
         cv2.putText(image, label, (center_x - 20, center_y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
-    # Save the image with marked points with original image name + "_zone_centers" in images/zone_centers
-    zone_centers_image_path = f"./images/zone_centers/{image_path.split('/')[-1]}"
-    cv2.imwrite(zone_centers_image_path, image)
+    # Save the image with marked points
+    zone_centers_image_path = "./images/zone_centers/"
+    if not os.path.isdir(zone_centers_image_path):
+        os.makedirs(zone_centers_image_path)
+
+    cv2.imwrite(zone_centers_image_path + image_path.split('/')[-1], image)
 
     coordinates = {}
 
