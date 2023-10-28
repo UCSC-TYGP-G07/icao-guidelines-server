@@ -4,7 +4,7 @@ from fastapi import status, FastAPI, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 
 from blur.laplacian import laplacian
-from face.face_tests import check_illumination_intensity
+from face.face_tests import check_illumination_intensity, check_shadows_across_face
 from eyes.eye_tests import check_eyes_open, check_looking_away
 from varied_background.grab_cut_mean import check_varied_bg
 from geometric_tests.geometric_tests import valid_geometric
@@ -118,7 +118,7 @@ class ICAOPhotoValidator:
         self.data.setdefault("face", {}).update({"oval_mask": face_oval_mask})
 
         face_oval_image_path = extract_face_oval_image(self.paths["original_image"], face_oval_mask)
-        self.paths["face_oval"] = face_oval_image_path
+        self.paths["face_oval_image"] = face_oval_image_path
 
     # Functions for running the tests
     def _validate_blurring(self):
@@ -153,6 +153,12 @@ class ICAOPhotoValidator:
                                                                             self.data["face"])
         return {"is_passed": is_passed, "mean_rgb_intensity_values": mean_rgb_intensity_values}
 
+    def _validate_shadows_across_face(self):
+        is_passed, probability_of_shadows = check_shadows_across_face(self.paths["original_image"],
+                                                                self.paths["face_oval_image"],
+                                                                self.data["face"])
+        return {"is_passed": is_passed, "probability_of_shadows_on_face": probability_of_shadows}
+
     def validate(self):
         print("Running ICAO photo validation pipeline")
         # Mapping of test names to corresponding validation methods
@@ -162,7 +168,8 @@ class ICAOPhotoValidator:
             "varied_bg": self._validate_varied_bg,  # ICAO-17
             "eyes_closed": self._validate_eyes_closed,  # ICAO-16
             "looking_away": self._validate_looking_away,  # ICAO-9
-            "illumination_intensity": self._validate_illumination_intensity  # ICAO-19, ICAO-22
+            "illumination_intensity": self._validate_illumination_intensity,  # ICAO-19, ICAO-22
+            "shadows_across_face": self._validate_shadows_across_face  # ICAO-22
         }
 
         # Pre-process the input file before running the tests
@@ -175,8 +182,8 @@ class ICAOPhotoValidator:
         self._get_face_oval()
 
         # For debugging
-        # print(self.data['face'].keys())
-        # print(self.data['face']['core_points'])
+        print(self.data['face'].keys())
+        print(self.data['face']['core_points'])
 
         self.pipeline["all_passed"] = True
 
