@@ -81,7 +81,7 @@ def get_mp_face_region(image_path, face_landmarks):
     return [(mp_left, mp_top), (mp_right, mp_top), (mp_right, mp_bottom), (mp_left, mp_bottom)]
 
 
-def extract_face_oval_image(image_path, face_landmarks):
+def get_face_oval_mask(image_path, face_landmarks):
     # Read the input image
     image = cv2.imread(image_path)
 
@@ -130,6 +130,16 @@ def extract_face_oval_image(image_path, face_landmarks):
     mask = np.zeros((image_height, image_width))
     mask = cv2.fillConvexPoly(mask, np.array(routes), 1)
     mask = mask.astype(bool)
+
+    return mask
+
+
+def extract_face_oval_image(image_path, mask):
+    # Read the input image
+    image = cv2.imread(image_path)
+
+    # Get image height and width
+    image_height, image_width, _ = image.shape
 
     out = np.zeros_like(image)
     out[mask] = image[mask]

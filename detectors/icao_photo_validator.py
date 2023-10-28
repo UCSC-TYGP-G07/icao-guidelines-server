@@ -9,7 +9,7 @@ from eyes.eye_tests import check_eyes_open, check_looking_away
 from varied_background.grab_cut_mean import check_varied_bg
 from geometric_tests.geometric_tests import valid_geometric
 from utilities.mp_face import get_num_faces, get_mp_face_region, get_face_landmarks_and_blendshapes, \
-    extract_face_oval_image
+    extract_face_oval_image, get_face_oval_mask
 from utilities.points_and_guides_marker import get_core_face_points, get_face_guidelines
 
 from PIL import Image
@@ -114,7 +114,10 @@ class ICAOPhotoValidator:
         self.data.setdefault("face", {}).update({"guidelines": face_guidelines})
 
     def _get_face_oval(self):
-        face_oval_image_path = extract_face_oval_image(self.paths["original_image"], self.data["face"]["all_landmarks"])
+        face_oval_mask = get_face_oval_mask(self.paths["original_image"], self.data["face"]["all_landmarks"])
+        self.data.setdefault("face", {}).update({"oval_mask": face_oval_mask})
+
+        face_oval_image_path = extract_face_oval_image(self.paths["original_image"], face_oval_mask)
         self.paths["face_oval"] = face_oval_image_path
 
     # Functions for running the tests
@@ -170,6 +173,10 @@ class ICAOPhotoValidator:
         self._get_face_region()
         self._get_face_core_points_and_guides()
         self._get_face_oval()
+
+        # For debugging
+        # print(self.data['face'].keys())
+        # print(self.data['face']['core_points'])
 
         self.pipeline["all_passed"] = True
 

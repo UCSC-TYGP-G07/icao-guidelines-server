@@ -12,7 +12,7 @@ def get_measurement_zone_coordinates(image_path, face_data):
 
     face_core_points = face_data["core_points"]
     _IED = abs(face_core_points["left_eye_center"][0] - face_core_points["right_eye_center"][0])  # inter-eye distance
-    _EM = abs(face_core_points["mouth_center"][1] - face_core_points["point_m"][1])  # eye-mouth distance
+    _EM = abs(face_core_points["mouth_centre"][1] - face_core_points["point_m"][1])  # eye-mouth distance
     _MP = 0.3 * _IED
 
     center_points = {
@@ -49,7 +49,6 @@ def get_measurement_zone_coordinates(image_path, face_data):
     for zone_name in zone_names:
         center_x, center_y = center_points[zone_name]
         half_length = _MP / 2
-        print("half_length", half_length)
         top_left = (int(center_x - half_length), int(center_y - half_length))
         bottom_right = (int(center_x + half_length), int(center_y + half_length))
         coordinates[zone_name] = {"top_left": top_left, "bottom_right": bottom_right}
