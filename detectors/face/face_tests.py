@@ -103,3 +103,35 @@ def check_illumination_intensity(image_path, face_data):
         mean_intensity_values_under_zone[zone_name] = (r_value, g_value, b_value)
 
     return is_passed, mean_intensity_values
+
+
+def check_shadows_across_face(image_path, face_mask_path, face_data):
+    # Read the input image
+    face_oval_image = cv2.imread(face_mask_path)
+
+    # Get a count of all the pixels that are not fully black
+    total_nonzero_pixels = np.count_nonzero(face_data['oval_mask'])
+
+    # Convert the original image to the XYZ color space
+    xyz_image = cv2.cvtColor(face_oval_image, cv2.COLOR_BGR2XYZ)
+
+    # Extract the Z channel from the XYZ color space
+    z_channel = xyz_image[:, :, 2]
+
+    # Binarize the Z channel to identify shadows (adjust the threshold as needed)
+    threshold = 64
+    z_bin = cv2.threshold(z_channel, threshold, 255, cv2.THRESH_BINARY)[1]
+
+    # Save the binarized Z channel as a new image
+    binarized_z_image_path = f"./images/face_oval_binarized_z/{image_path.split('/')[-1]}"
+    os.makedirs(os.path.dirname(binarized_z_image_path), exist_ok=True)
+    cv2.imwrite(binarized_z_image_path, z_bin)
+
+    # Calculate the probability of shadows using the percentage of nonzero pixels in the masked ZBin
+    nonzero_pixels_in_binarized_z = np.count_nonzero(z_bin)
+    probability_of_shadows = (1 - (nonzero_pixels_in_binarized_z / total_nonzero_pixels)) * 100
+
+    # print(nonzero_pixels_in_binarized_z, total_nonzero_pixels)
+
+    # Set threshold for acceptance
+    return probability_of_shadows < 25, round(probability_of_shadows, 4)
