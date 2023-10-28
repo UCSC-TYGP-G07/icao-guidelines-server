@@ -3,6 +3,7 @@ import os
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
 import mediapipe as mp
 from mediapipe.tasks import python
@@ -34,6 +35,8 @@ def get_num_faces(image_path):
 
 
 def get_face_landmarks_and_blendshapes(image_path):
+    image_name = os.path.basename(image_path)
+
     # Create an FaceLandmarker object
     base_options = python.BaseOptions(model_asset_path='utilities/face_landmarker_v2_with_blendshapes.task')
     options = vision.FaceLandmarkerOptions(base_options=base_options,
@@ -76,6 +79,69 @@ def get_mp_face_region(image_path, face_landmarks):
     mp_bottom = face_landmarks[152].y * image_height
 
     return [(mp_left, mp_top), (mp_right, mp_top), (mp_right, mp_bottom), (mp_left, mp_bottom)]
+
+
+def extract_face_oval_image(image_path, face_landmarks):
+    # Read the input image
+    image = cv2.imread(image_path)
+
+    # Get image height and width
+    image_height, image_width, _ = image.shape
+
+    mp_face_mesh = mp.solutions.face_mesh
+    face_oval = mp_face_mesh.FACEMESH_FACE_OVAL
+
+    df = pd.DataFrame(list(face_oval), columns=["p1", "p2"])
+
+    # Ordering face oval lines
+    routes_idx = []
+
+    p1 = df.iloc[0]["p1"]
+    p2 = df.iloc[0]["p2"]
+
+    for i in range(0, df.shape[0]):
+        # print(p1, p2)
+
+        obj = df[df["p1"] == p2]
+        p1 = obj["p1"].values[0]
+        p2 = obj["p2"].values[0]
+
+        route_idx = []
+        route_idx.append(p1)
+        route_idx.append(p2)
+        routes_idx.append(route_idx)
+
+    # Finding the coordinates of points
+    routes = []
+
+    for source_idx, target_idx in routes_idx:
+        source = face_landmarks[source_idx]
+        target = face_landmarks[target_idx]
+
+        relative_source = (int(image_width * source.x), int(image_height * source.y))
+        relative_target = (int(image_width * target.x), int(image_height * target.y))
+
+        # cv2.line(img, relative_source, relative_target, (255, 255, 255), thickness = 2)
+
+        routes.append(relative_source)
+        routes.append(relative_target)
+
+    # Extracting face_oval
+    mask = np.zeros((image_height, image_width))
+    mask = cv2.fillConvexPoly(mask, np.array(routes), 1)
+    mask = mask.astype(bool)
+
+    out = np.zeros_like(image)
+    out[mask] = image[mask]
+
+    # Save the face_oval image
+    image_name = os.path.basename(image_path)
+    face_oval_destination_path = f"./images/face_oval/{image_name}"
+
+    # Ensure that the directory structure exists
+    os.makedirs(os.path.dirname(face_oval_destination_path), exist_ok=True)
+    cv2.imwrite(face_oval_destination_path, cv2.cvtColor(out[:, :, ::-1], cv2.COLOR_RGB2BGR))
+    return face_oval_destination_path
 
 
 def draw_landmarks_on_image(rgb_image, detection_result):

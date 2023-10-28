@@ -8,7 +8,8 @@ from face.face_tests import check_illumination_intensity
 from eyes.eye_tests import check_eyes_open, check_looking_away
 from varied_background.grab_cut_mean import check_varied_bg
 from geometric_tests.geometric_tests import valid_geometric
-from utilities.mp_face import get_num_faces, get_mp_face_region, get_face_landmarks_and_blendshapes
+from utilities.mp_face import get_num_faces, get_mp_face_region, get_face_landmarks_and_blendshapes, \
+    extract_face_oval_image
 from utilities.points_and_guides_marker import get_core_face_points, get_face_guidelines
 
 from PIL import Image
@@ -112,6 +113,10 @@ class ICAOPhotoValidator:
         face_guidelines = get_face_guidelines(self.paths["original_image"], self.data["face"])
         self.data.setdefault("face", {}).update({"guidelines": face_guidelines})
 
+    def _get_face_oval(self):
+        face_oval_image_path = extract_face_oval_image(self.paths["original_image"], self.data["face"]["all_landmarks"])
+        self.paths["face_oval"] = face_oval_image_path
+
     # Functions for running the tests
     def _validate_blurring(self):
         is_blurred, blur_var = laplacian.laplacian_filter(self.paths["original_image"])
@@ -141,7 +146,8 @@ class ICAOPhotoValidator:
         return {"is_passed": is_looking_at_camera, "gaze_directions": gaze_directions}
 
     def _validate_illumination_intensity(self):
-        is_passed, mean_rgb_intensity_values = check_illumination_intensity(self.paths["original_image"], self.data["face"])
+        is_passed, mean_rgb_intensity_values = check_illumination_intensity(self.paths["original_image"],
+                                                                            self.data["face"])
         return {"is_passed": is_passed, "mean_rgb_intensity_values": mean_rgb_intensity_values}
 
     def validate(self):
@@ -163,6 +169,7 @@ class ICAOPhotoValidator:
         self._get_face_landmarks_and_blendshapes()
         self._get_face_region()
         self._get_face_core_points_and_guides()
+        self._get_face_oval()
 
         self.pipeline["all_passed"] = True
 
