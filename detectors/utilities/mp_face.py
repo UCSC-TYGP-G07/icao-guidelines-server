@@ -10,6 +10,9 @@ from mediapipe.tasks.python import vision
 from mediapipe import solutions
 from mediapipe.framework.formats import landmark_pb2
 
+LEFT_IRIS = list(set([index for pair in mp.solutions.face_mesh.FACEMESH_LEFT_IRIS for index in pair]))
+RIGHT_IRIS = list(set([index for pair in mp.solutions.face_mesh.FACEMESH_RIGHT_IRIS for index in pair]))
+
 
 def get_num_faces(image_path):
     # Initialize MediaPipe Face Detection
@@ -76,6 +79,23 @@ def get_mp_face_region(image_path, face_landmarks):
     mp_bottom = face_landmarks[152].y * image_height
 
     return [(mp_left, mp_top), (mp_right, mp_top), (mp_right, mp_bottom), (mp_left, mp_bottom)]
+
+
+def get_iris_coords(image_path, face_landmarks, mp_iris):
+    image = cv2.imread(image_path)
+    height, width = image.shape[:2]
+
+    x_coords = [int(face_landmarks[point].x * width) for point in mp_iris]
+    y_coords = [int(face_landmarks[point].y * height) for point in mp_iris]
+    mp_left, mp_right = min(x_coords), max(x_coords)
+    mp_top, mp_bottom = min(y_coords), max(y_coords)
+
+    return [(mp_left, mp_top), (mp_right, mp_top), (mp_right, mp_bottom), (mp_left, mp_bottom)]
+
+
+def get_mp_iris_region(image_path, face_landmarks):
+    return get_iris_coords(image_path, face_landmarks, LEFT_IRIS), \
+        get_iris_coords(image_path, face_landmarks, RIGHT_IRIS)
 
 
 def draw_landmarks_on_image(rgb_image, detection_result):
