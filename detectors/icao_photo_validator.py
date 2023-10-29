@@ -6,7 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from blur.laplacian import laplacian
 from varied_background.grab_cut_mean import check_varied_bg
 from geometric_tests.geometric_tests import valid_geometric
-from utilities.mp_face import get_num_faces, get_face_landmarks, get_mp_face_region
+from eye.red_eye.red_eye import valid_redeye
+from utilities.mp_face import get_num_faces, get_face_landmarks, get_mp_face_region, get_mp_iris_region
 
 from PIL import Image
 import uuid
@@ -102,6 +103,11 @@ class ICAOPhotoValidator:
         mp_face_region = get_mp_face_region(self.paths["original_image"], self.data["face"]["all_landmarks"])
         self.data.setdefault("face", {}).update({"mp_region_coords": mp_face_region})
 
+    def _get_iris_region(self):
+        left_iris, right_iris = get_mp_iris_region(self.paths["original_image"], self.data["face"]["all_landmarks"])
+        self.data.setdefault("iris", {}).update({"mp_left_region_coords": left_iris,
+                                                 "mp_right_region_coords": right_iris})
+
     # Functions for running the tests
     def _validate_blurring(self):
         is_blurred, blur_var = laplacian.laplacian_filter(self.paths["original_image"])
@@ -116,6 +122,12 @@ class ICAOPhotoValidator:
                                                               self.data["face"]["all_landmarks"])
         return {"is_passed": is_valid_geometric, "geometric_tests_passed": geometric_tests}
 
+    def _validate_redeye(self):
+        is_redeye, compliance_score = valid_redeye(self.paths["original_image"],
+                                                   self.data["iris"]["mp_left_region_coords"],
+                                                   self.data["iris"]["mp_right_region_coords"])
+        return {"is_passed": bool(not is_redeye), "compliance_score": compliance_score}
+
     def validate(self):
         print("Running ICAO photo validation pipeline")
         # Mapping of test names to corresponding validation methods
@@ -123,6 +135,7 @@ class ICAOPhotoValidator:
             "geometry": self._validate_geometry,  # ICAO-4, ICAO-5, ICAO-6, ICAO-7
             "blurring": self._validate_blurring,  # ICAO-8
             "varied_bg": self._validate_varied_bg,  # ICAO-17
+            "redeye": self._validate_redeye  # ICAO-20
         }
 
         # Pre-process the input file before running the tests
@@ -130,6 +143,7 @@ class ICAOPhotoValidator:
         self._resize_image()
         self._detect_face()
         self._get_face_landmarks()
+        self._get_iris_region()
         self._get_face_region()
 
         self.pipeline["all_passed"] = True
@@ -166,5 +180,4 @@ class ICAOPhotoValidator:
 
         # If all tests passed, set "all_passed" to True
         self.pipeline["all_passed"] = self.pipeline.get("all_passed", True)
-
         return self.pipeline
