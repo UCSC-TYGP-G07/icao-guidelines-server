@@ -38,21 +38,33 @@ def check_head_image_height_ratio(face_landmarks):
     return DD_THRESHOLD[0] <= DD <= DD_THRESHOLD[1]
 
 
-def valid_geometric(image_path, face_landmarks):
-    # Geometric test - Vertical position
+def check_eye_distance(face_core_points):
+    inter_eye_distance = face_core_points["left_eye_center"][0] - face_core_points["right_eye_center"][0]
+    return inter_eye_distance >= 90
+
+
+def valid_geometric(image_path, face_data):
+    face_landmarks = face_data["all_landmarks"]
+    face_core_points = face_data["core_points"]
+
+    # Geometric test - Eye distance
+    eye_distance_check = check_eye_distance(face_core_points)
+
+    # Geometric test - Relative vertical position
     vp_check = check_vertical_position(face_landmarks)
-    # Geometric test - Horizontal position
+    # Geometric test - Relative horizontal position
     hp_check = check_horizontal_position(face_landmarks)
     # Geometric test - Head image width ratio
     hiwr_check = check_head_image_width_ratio(face_landmarks)
     # Geometric test - Head image height ratio
     hihr_check = check_head_image_height_ratio(face_landmarks)
 
-    is_valid = vp_check and hp_check and hiwr_check and hihr_check
+    is_valid = eye_distance_check and vp_check and hp_check and hiwr_check and hihr_check
 
     tests = {
-        "vertical_position": vp_check,
-        "horizontal_position": hp_check,
+        "inter_eye_distance": eye_distance_check,
+        "relative_vertical_position": vp_check,
+        "relative_horizontal_position": hp_check,
         "head_image_width_ratio": hiwr_check,
         "head_image_height_ratio": hihr_check
     }
