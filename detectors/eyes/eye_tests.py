@@ -52,13 +52,6 @@ def check_looking_away(face_data):
             0.0 <= eye_look_up <= 0.06
     )
 
-    # print("eye_look_down: ", eye_look_down)
-    # print("eye_look_up ", eye_look_up)
-    # print("eye_look_in_left ", eye_look_in_left)
-    # print("eye_look_in_right ", eye_look_in_right)
-    # print("eye_look_out_left ", eye_look_out_left)
-    # print("eye_look_out_right ", eye_look_out_right)
-
     # Check if straight at camera
     straight_at_camera = (
             0.05 <= eye_look_down <= 0.2 and
