@@ -1,15 +1,17 @@
 import cv2
 
-COMPLIANCE_THRESHOLD = 95
+COMPLIANCE_THRESHOLD = 98
+RGB_THRESHOLD = (100, 60, 60)
 
 
 def crop_iris_region(image_path, coords, padding=0):
     image = cv2.imread(image_path)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     cropped_image = image[coords[0][1] - padding:coords[2][1] + padding, coords[0][0] - padding:coords[2][0] + padding]
     return cropped_image
 
 
-def classify_pixels(iris, threshold=(100, 60, 60)):
+def classify_pixels(iris, threshold):
     red_channel = iris[:, :, 0]
     green_channel = iris[:, :, 1]
     blue_channel = iris[:, :, 2]
@@ -21,7 +23,7 @@ def classify_pixels(iris, threshold=(100, 60, 60)):
     return red_pixels.sum(), natural_pixels.sum()
 
 
-def compliance_score(iris, threshold=(100, 60, 60)):
+def compliance_score(iris, threshold=RGB_THRESHOLD):
     red_count, natural_count = classify_pixels(iris, threshold)
     total_pixels = red_count + natural_count
     if total_pixels == 0:  # avoid division by zero
