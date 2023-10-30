@@ -20,16 +20,17 @@ WORKDIR /app
 COPY ./requirements.txt .
 
 # Copy everything from ./src directory to /app in the container
-# BLUR
+COPY ./utilities/ ./utilities/
 COPY ./blur/laplacian/ ./blur/laplacian/
-# VARIED BACKGROUND
+COPY ./eyes/ ./eyes/
+COPY ./face/ ./face/
+COPY ./geometric_tests/geometric_tests.py ./geometric_tests/geometric_tests.py
 COPY ./varied_background/grab_cut_mean.py ./varied_background/grab_cut_mean.py
-COPY main.py utilities.py ./
 
-# Install system depe
+COPY server.py icao_photo_validator.py ./
 
 # Install the specified dependencies using pip
 RUN pip install -r requirements.txt
 
 # Run the application in port 8000
-CMD ["uvicorn", "--host", "0.0.0.0", "--port", "8000", "main:app"]
+CMD ["uvicorn", "--host", "0.0.0.0", "--port", "8000", "server:app"]
