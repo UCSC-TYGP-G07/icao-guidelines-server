@@ -146,10 +146,8 @@ def check_mouth_open(face_data):
     jaw_open = face_blendshapes[25].score
     mouth_close = face_blendshapes[27].score
     mouth_pucker = face_blendshapes[38].score
-
     mouth_roll_lower = face_blendshapes[40].score
     mouth_roll_upper = face_blendshapes[41].score
-
     smile_left = face_blendshapes[44].score
     smile_right = face_blendshapes[45].score
 
@@ -159,7 +157,16 @@ def check_mouth_open(face_data):
     smiling_check = (smile_left > 0.5 or smile_right > 0.5)
     proper_mouth_shape_check = (mouth_pucker < 0.75 and mouth_roll_lower < 0.5 and mouth_roll_upper < 0.5)
 
-    is_mouth_closed = (not mouth_open_check and mouth_close_check)
+    # Testing using distance of lip points (ICAO guide)
+    upper_lip_bottom = face_landmarks[13]
+    lower_lip_top = face_landmarks[14]
+    lower_lip_bottom = face_landmarks[17]
+
+    _A = abs(upper_lip_bottom.y - lower_lip_top.y)
+    _B = abs(lower_lip_top.y - lower_lip_bottom.y)
+    lip_distance_check = (2 * _A <= _B)
+
+    is_mouth_closed = (not mouth_open_check and mouth_close_check and lip_distance_check)
     is_proper_expression = not smiling_check and proper_mouth_shape_check
 
     return is_mouth_closed, is_proper_expression
