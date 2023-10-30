@@ -1,4 +1,5 @@
-from redeye.redeye import valid_redeye
+from .redeye.redeye import valid_redeye
+from .hair_across_eyes.hair_across_eyes import check_eye_hair_overlap
 
 
 def check_eyes_open(face_data):
@@ -81,3 +82,9 @@ def check_looking_away(face_data):
 
 def check_redeye(image_path, left_iris_coords, right_iris_coords):
     return valid_redeye(image_path, left_iris_coords, right_iris_coords)
+
+
+def check_hair_across_eyes(image_path, left_eye, right_eye):
+    left_overlap, right_overlap = check_eye_hair_overlap(image_path, left_eye, right_eye)
+    is_hair_across_eyes = not (left_overlap or right_overlap)
+    return is_hair_across_eyes, left_overlap, right_overlap
