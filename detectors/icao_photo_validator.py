@@ -5,10 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from blur.laplacian import laplacian
 from face.face_tests import check_illumination_intensity, check_shadows_across_face, check_mouth_open
-from eyes.eye_tests import check_eyes_open, check_looking_away
+from eyes.eye_tests import check_eyes_open, check_looking_away, check_redeye
 from varied_background.grab_cut_mean import check_varied_bg
 from geometric_tests.geometric_tests import valid_geometric
-from eye.red_eye.red_eye import valid_redeye
 from utilities.mp_face import get_num_faces, get_mp_face_region, get_face_landmarks_and_blendshapes, \
     extract_face_oval_image, get_face_oval_mask, get_mp_iris_region
 from utilities.points_and_guides_marker import get_core_face_points, get_face_guidelines
@@ -141,7 +140,7 @@ class ICAOPhotoValidator:
         return {"is_passed": is_valid_geometric, "geometric_tests_passed": geometric_tests}
 
     def _validate_redeye(self):
-        is_redeye, compliance_score = valid_redeye(self.paths["original_image"],
+        is_redeye, compliance_score = check_redeye(self.paths["original_image"],
                                                    self.data["iris"]["mp_left_region_coords"],
                                                    self.data["iris"]["mp_right_region_coords"])
         return {"is_passed": bool(not is_redeye), "compliance_score": compliance_score}

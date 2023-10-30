@@ -1,3 +1,6 @@
+from redeye.redeye import valid_redeye
+
+
 def check_eyes_open(face_data):
     face_blendshapes = face_data["blendshapes"]
     eye_open_threshold = 0.75
@@ -74,3 +77,7 @@ def check_looking_away(face_data):
         return straight_at_camera, gaze_directions
 
     return False, gaze_directions
+
+
+def check_redeye(image_path, left_iris_coords, right_iris_coords):
+    return valid_redeye(image_path, left_iris_coords, right_iris_coords)
