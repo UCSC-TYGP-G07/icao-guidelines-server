@@ -5,11 +5,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from blur.laplacian import laplacian
 from face.face_tests import check_illumination_intensity, check_shadows_across_face, check_mouth_open
-from eyes.eye_tests import check_eyes_open, check_looking_away, check_redeye
+from eyes.eye_tests import check_eyes_open, check_looking_away, check_redeye, check_hair_across_eyes
 from varied_background.grab_cut_mean import check_varied_bg
 from geometric_tests.geometric_tests import valid_geometric
 from utilities.mp_face import get_num_faces, get_mp_face_region, get_face_landmarks_and_blendshapes, \
-    extract_face_oval_image, get_face_oval_mask, get_mp_iris_region
+    extract_face_oval_image, get_face_oval_mask, get_eye_region, get_mp_iris_region
 from utilities.points_and_guides_marker import get_core_face_points, get_face_guidelines
 
 from PIL import Image
@@ -106,10 +106,15 @@ class ICAOPhotoValidator:
         mp_face_region = get_mp_face_region(self.paths["original_image"], self.data["face"]["all_landmarks"])
         self.data.setdefault("face", {}).update({"mp_region_coords": mp_face_region})
 
+    def _get_eye_region(self):
+        left_eye, right_eye = get_eye_region(self.paths["original_image"], self.data["face"]["all_landmarks"])
+        self.data.setdefault("eyes", {}).update({"left_region_coords": left_eye,
+                                                 "right_region_coords": right_eye})
+
     def _get_iris_region(self):
         left_iris, right_iris = get_mp_iris_region(self.paths["original_image"], self.data["face"]["all_landmarks"])
-        self.data.setdefault("iris", {}).update({"mp_left_region_coords": left_iris,
-                                                 "mp_right_region_coords": right_iris})
+        self.data.setdefault("eyes", {}).update({"iris": {"mp_left_region_coords": left_iris,
+                                                 "mp_right_region_coords": right_iris}})
 
     def _get_face_core_points_and_guides(self):
         face_core_points = get_core_face_points(self.paths["original_image"], self.data["face"]["all_landmarks"])
@@ -141,9 +146,18 @@ class ICAOPhotoValidator:
 
     def _validate_redeye(self):
         is_redeye, compliance_score = check_redeye(self.paths["original_image"],
-                                                   self.data["iris"]["mp_left_region_coords"],
-                                                   self.data["iris"]["mp_right_region_coords"])
+                                                   self.data["eyes"]["iris"]["mp_left_region_coords"],
+                                                   self.data["eyes"]["iris"]["mp_right_region_coords"])
         return {"is_passed": bool(not is_redeye), "compliance_score": compliance_score}
+
+    def _validate_hair_across_eyes(self):
+        is_hair_across_eyes, is_hair_across_eyes_left, is_hair_across_eyes_right = check_hair_across_eyes(
+            self.paths["original_image"],
+            self.data["eyes"]["left_region_coords"],
+            self.data["eyes"]["right_region_coords"])
+        return {"is_passed": bool(is_hair_across_eyes),
+                "hair_across_eyes_left": bool(is_hair_across_eyes_left),
+                "hair_across_eyes_right": bool(is_hair_across_eyes_right)}
 
     def _validate_eyes_closed(self):
         is_both_open, open_probabilities = check_eyes_open(self.data["face"])
@@ -186,6 +200,7 @@ class ICAOPhotoValidator:
             "looking_away": self._validate_looking_away,  # ICAO-9
             "illumination_intensity": self._validate_illumination_intensity,  # ICAO-19, ICAO-22
             "redeye": self._validate_redeye,  # ICAO-20
+            "hair_across_eyes": self._validate_hair_across_eyes,  # ICAO-15
             "shadows_across_face": self._validate_shadows_across_face,  # ICAO-22
             "mouth_open": self._validate_mouth_open  # ICAO-29
         }
@@ -195,10 +210,11 @@ class ICAOPhotoValidator:
         self._resize_image()
         self._detect_face()
         self._get_face_landmarks_and_blendshapes()
-        self._get_iris_region()
         self._get_face_region()
         self._get_face_core_points_and_guides()
         self._get_face_oval()
+        self._get_iris_region()
+        self._get_eye_region()
 
         # For debugging
         print(self.data['face'].keys())
