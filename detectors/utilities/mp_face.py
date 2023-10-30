@@ -100,6 +100,28 @@ def get_mp_iris_region(image_path, face_landmarks):
     return get_iris_coords(image_path, face_landmarks, LEFT_IRIS), \
         get_iris_coords(image_path, face_landmarks, RIGHT_IRIS)
 
+
+def get_eye_region(image_path, face_landmarks):
+    # Read the input image
+    image = cv2.imread(image_path)
+    # Get image height and width
+    image_height, image_width, _ = image.shape
+
+    # Get the coordinates of the left eye region
+    left_eye_left = face_landmarks[33].x * image_width
+    left_eye_right = face_landmarks[133].x * image_width
+    left_eye_top = face_landmarks[159].y * image_height
+    left_eye_bottom = face_landmarks[145].y * image_height
+
+    # Get the coordinates of the right eye region
+    right_eye_left = face_landmarks[263].x * image_width
+    right_eye_right = face_landmarks[362].x * image_width
+    right_eye_top = face_landmarks[386].y * image_height
+    right_eye_bottom = face_landmarks[374].y * image_height
+
+    return [(left_eye_left, left_eye_top), (left_eye_right, left_eye_bottom)], [(right_eye_left, right_eye_top), (right_eye_right, right_eye_bottom)]
+
+
 def get_face_oval_mask(image_path, face_landmarks):
     # Read the input image
     image = cv2.imread(image_path)
