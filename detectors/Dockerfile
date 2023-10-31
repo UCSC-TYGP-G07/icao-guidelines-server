@@ -1,5 +1,5 @@
 # Base image from Dockerhub with a minimal version of Python
-FROM python:slim
+FROM python:3.10-slim
 
 # To ensure that Python outputs its standard output immediately
 ENV PYTHONUNBUFFERED 1
@@ -29,8 +29,10 @@ COPY ./varied_background/grab_cut_mean.py ./varied_background/grab_cut_mean.py
 
 COPY server.py icao_photo_validator.py ./
 
-# Install the specified dependencies using pip
-RUN pip install -r requirements.txt
+
+# Upgrade pip and install requirements
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
 
 # Run the application in port 8000
 CMD ["uvicorn", "--host", "0.0.0.0", "--port", "8000", "server:app"]
