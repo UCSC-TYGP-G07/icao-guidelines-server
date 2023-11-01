@@ -4,5 +4,4 @@ uvicorn
 numpy
 pandas
 opencv-python
-python-multipart
 mediapipe
