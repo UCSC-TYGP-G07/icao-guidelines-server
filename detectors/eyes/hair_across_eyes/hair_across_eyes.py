@@ -9,7 +9,6 @@ def extract_hair_by_color(image_path):
     image_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
     # Define the lower and upper bounds for hair color in HSV space
-    # This is just an example for dark hair; you'd adjust these values based on the desired hair color
     lower_bound = np.array([0, 0, 0])
     upper_bound = np.array([180, 255, 80])
 
