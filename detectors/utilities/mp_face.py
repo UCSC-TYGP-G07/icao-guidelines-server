@@ -3,12 +3,16 @@ import os
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
 import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from mediapipe import solutions
 from mediapipe.framework.formats import landmark_pb2
+
+LEFT_IRIS = list(set([index for pair in mp.solutions.face_mesh.FACEMESH_LEFT_IRIS for index in pair]))
+RIGHT_IRIS = list(set([index for pair in mp.solutions.face_mesh.FACEMESH_RIGHT_IRIS for index in pair]))
 
 
 def get_num_faces(image_path):
@@ -33,7 +37,9 @@ def get_num_faces(image_path):
     return num_faces
 
 
-def get_face_landmarks(image_path):
+def get_face_landmarks_and_blendshapes(image_path):
+    image_name = os.path.basename(image_path)
+
     # Create an FaceLandmarker object
     base_options = python.BaseOptions(model_asset_path='utilities/face_landmarker_v2_with_blendshapes.task')
     options = vision.FaceLandmarkerOptions(base_options=base_options,
@@ -60,7 +66,7 @@ def get_face_landmarks(image_path):
 
     cv2.imwrite(destination_path, cv2.cvtColor(annotated_image, cv2.COLOR_RGB2BGR))
 
-    return detection_result.face_landmarks[0]
+    return detection_result.face_landmarks[0], detection_result.face_blendshapes[0]
 
 
 def get_mp_face_region(image_path, face_landmarks):
@@ -76,6 +82,117 @@ def get_mp_face_region(image_path, face_landmarks):
     mp_bottom = face_landmarks[152].y * image_height
 
     return [(mp_left, mp_top), (mp_right, mp_top), (mp_right, mp_bottom), (mp_left, mp_bottom)]
+
+
+def get_iris_coords(image_path, face_landmarks, mp_iris):
+    image = cv2.imread(image_path)
+    height, width = image.shape[:2]
+
+    x_coords = [int(face_landmarks[point].x * width) for point in mp_iris]
+    y_coords = [int(face_landmarks[point].y * height) for point in mp_iris]
+    mp_left, mp_right = min(x_coords), max(x_coords)
+    mp_top, mp_bottom = min(y_coords), max(y_coords)
+
+    return [(mp_left, mp_top), (mp_right, mp_top), (mp_right, mp_bottom), (mp_left, mp_bottom)]
+
+
+def get_mp_iris_region(image_path, face_landmarks):
+    return get_iris_coords(image_path, face_landmarks, LEFT_IRIS), \
+        get_iris_coords(image_path, face_landmarks, RIGHT_IRIS)
+
+
+def get_eye_region(image_path, face_landmarks):
+    # Read the input image
+    image = cv2.imread(image_path)
+    # Get image height and width
+    image_height, image_width, _ = image.shape
+
+    # Get the coordinates of the left eye region
+    left_eye_left = face_landmarks[33].x * image_width
+    left_eye_right = face_landmarks[133].x * image_width
+    left_eye_top = face_landmarks[159].y * image_height
+    left_eye_bottom = face_landmarks[145].y * image_height
+
+    # Get the coordinates of the right eye region
+    right_eye_left = face_landmarks[263].x * image_width
+    right_eye_right = face_landmarks[362].x * image_width
+    right_eye_top = face_landmarks[386].y * image_height
+    right_eye_bottom = face_landmarks[374].y * image_height
+
+    return [(left_eye_left, left_eye_top), (left_eye_right, left_eye_bottom)], [(right_eye_left, right_eye_top), (right_eye_right, right_eye_bottom)]
+
+
+def get_face_oval_mask(image_path, face_landmarks):
+    # Read the input image
+    image = cv2.imread(image_path)
+
+    # Get image height and width
+    image_height, image_width, _ = image.shape
+
+    mp_face_mesh = mp.solutions.face_mesh
+    face_oval = mp_face_mesh.FACEMESH_FACE_OVAL
+
+    df = pd.DataFrame(list(face_oval), columns=["p1", "p2"])
+
+    # Ordering face oval lines
+    routes_idx = []
+
+    p1 = df.iloc[0]["p1"]
+    p2 = df.iloc[0]["p2"]
+
+    for i in range(0, df.shape[0]):
+        # print(p1, p2)
+
+        obj = df[df["p1"] == p2]
+        p1 = obj["p1"].values[0]
+        p2 = obj["p2"].values[0]
+
+        route_idx = []
+        route_idx.append(p1)
+        route_idx.append(p2)
+        routes_idx.append(route_idx)
+
+    # Finding the coordinates of points
+    routes = []
+
+    for source_idx, target_idx in routes_idx:
+        source = face_landmarks[source_idx]
+        target = face_landmarks[target_idx]
+
+        relative_source = (int(image_width * source.x), int(image_height * source.y))
+        relative_target = (int(image_width * target.x), int(image_height * target.y))
+
+        # cv2.line(img, relative_source, relative_target, (255, 255, 255), thickness = 2)
+
+        routes.append(relative_source)
+        routes.append(relative_target)
+
+    # Extracting face_oval
+    mask = np.zeros((image_height, image_width))
+    mask = cv2.fillConvexPoly(mask, np.array(routes), 1)
+    mask = mask.astype(bool)
+
+    return mask
+
+
+def extract_face_oval_image(image_path, mask):
+    # Read the input image
+    image = cv2.imread(image_path)
+
+    # Get image height and width
+    image_height, image_width, _ = image.shape
+
+    out = np.zeros_like(image)
+    out[mask] = image[mask]
+
+    # Save the face_oval image
+    image_name = os.path.basename(image_path)
+    face_oval_destination_path = f"./images/face_oval/{image_name}"
+
+    # Ensure that the directory structure exists
+    os.makedirs(os.path.dirname(face_oval_destination_path), exist_ok=True)
+    cv2.imwrite(face_oval_destination_path, cv2.cvtColor(out[:, :, ::-1], cv2.COLOR_RGB2BGR))
+    return face_oval_destination_path
 
 
 def draw_landmarks_on_image(rgb_image, detection_result):
