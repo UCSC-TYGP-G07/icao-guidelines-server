@@ -34,3 +34,12 @@ def get_yaw(face_landmarks):
     right_dist = abs(face_landmarks[359].x - face_landmarks[356].x)
     face_width = abs(face_landmarks[356].x - face_landmarks[127].x)
     return (abs(right_dist - left_dist)/face_width)/0.05 * 8
+
+
+def is_valid_roll_pitch_yaw(face_landmarks):
+    roll = get_roll(face_landmarks)
+    yaw = get_yaw(face_landmarks)
+    pitch = get_pitch(face_landmarks)
+    roll_pitch_yaw_avg = (roll + yaw + pitch) / 3
+    is_valid = roll_pitch_yaw_avg < 8
+    return is_valid, roll_pitch_yaw_avg
