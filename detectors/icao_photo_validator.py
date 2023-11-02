@@ -7,6 +7,7 @@ from blur.laplacian import laplacian
 from hat_cap.hat_or_cap import detect_hat_or_cap
 from face.face_tests import check_illumination_intensity, check_shadows_across_face, check_mouth_open
 from eyes.eye_tests import check_eyes_open, check_looking_away, check_redeye, check_hair_across_eyes
+from roll_pitch_yaw.roll_pitch_yaw_test import is_valid_roll_pitch_yaw
 from varied_background.grab_cut_mean import check_varied_bg
 from geometric_tests.geometric_tests import valid_geometric
 from washed_out.washed_out import is_washed_out
@@ -199,6 +200,10 @@ class ICAOPhotoValidator:
         is_wearing_hat = detect_hat_or_cap(self.paths["original_image"])
         return {"is_passed": not is_wearing_hat}
 
+    def _validate_roll_pitch_yaw(self):
+        is_valid, roll_pitch_yaw_avg = is_valid_roll_pitch_yaw(self.data["face"]["all_landmarks"])
+        return {"is_passed": is_valid, "roll_pitch_yaw_avg": roll_pitch_yaw_avg}
+
     def validate(self):
         print("Running ICAO photo validation pipeline")
         # Mapping of test names to corresponding validation methods
@@ -213,6 +218,7 @@ class ICAOPhotoValidator:
             "hair_across_eyes": self._validate_hair_across_eyes,  # ICAO-15
             "shadows_across_face": self._validate_shadows_across_face,  # ICAO-22
             "mouth_open": self._validate_mouth_open,  # ICAO-29
+            "roll_pitch_yaw": self._validate_roll_pitch_yaw  # ICAO-18
             "washed_out": self._validate_washed_out,  # ICAO-33
             "hat_or_cap": self._validate_hat_or_cap  # ICAO-27
         }
