@@ -192,7 +192,6 @@ class ICAOPhotoValidator:
 
     def _validate_washed_out(self):
         is_washed_out_, washed_out_score = is_washed_out(self.paths["original_image"])
-        print(is_washed_out_, washed_out_score)
         return {"is_passed": bool(not is_washed_out_), "washed_out_score": washed_out_score}
 
     def validate(self):
