@@ -4,6 +4,7 @@ from fastapi import status, FastAPI, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 
 from blur.laplacian import laplacian
+from hat_cap.hat_or_cap import detect_hat_or_cap
 from face.face_tests import check_illumination_intensity, check_shadows_across_face, check_mouth_open
 from eyes.eye_tests import check_eyes_open, check_looking_away, check_redeye, check_hair_across_eyes
 from varied_background.grab_cut_mean import check_varied_bg
@@ -115,7 +116,7 @@ class ICAOPhotoValidator:
     def _get_iris_region(self):
         left_iris, right_iris = get_mp_iris_region(self.paths["original_image"], self.data["face"]["all_landmarks"])
         self.data.setdefault("eyes", {}).update({"iris": {"mp_left_region_coords": left_iris,
-                                                 "mp_right_region_coords": right_iris}})
+                                                          "mp_right_region_coords": right_iris}})
 
     def _get_face_core_points_and_guides(self):
         face_core_points = get_core_face_points(self.paths["original_image"], self.data["face"]["all_landmarks"])
@@ -194,6 +195,10 @@ class ICAOPhotoValidator:
         is_washed_out_, washed_out_score = is_washed_out(self.paths["original_image"])
         return {"is_passed": bool(not is_washed_out_), "washed_out_score": washed_out_score}
 
+    def _validate_hat_or_cap(self):
+        is_wearing_hat = detect_hat_or_cap(self.paths["original_image"])
+        return {"is_passed": not is_wearing_hat}
+
     def validate(self):
         print("Running ICAO photo validation pipeline")
         # Mapping of test names to corresponding validation methods
@@ -209,6 +214,7 @@ class ICAOPhotoValidator:
             "shadows_across_face": self._validate_shadows_across_face,  # ICAO-22
             "mouth_open": self._validate_mouth_open,  # ICAO-29
             "washed_out": self._validate_washed_out,  # ICAO-33
+            "hat_or_cap": self._validate_hat_or_cap  # ICAO-27
         }
 
         # Pre-process the input file before running the tests
