@@ -46,7 +46,7 @@ def crop_to_square_top_for_img(image):
 
 def detect_hat_or_cap(image_path):
     # Load model from keras file
-    model = tf.keras.models.load_model('hat_classifier_2_97_new.h5')
+    model = tf.keras.models.load_model('hat_cap/hat_classifier_2_97_new.h5')
 
     # Predict on a single image
     # Load the image, crop to a square and resize
