@@ -26,6 +26,7 @@ COPY ./eyes/ ./eyes/
 COPY ./face/ ./face/
 COPY ./geometric_tests/geometric_tests.py ./geometric_tests/geometric_tests.py
 COPY ./hat_cap/hat_or_cap.py ./hat_cap/hat_or_cap.py
+COPY ./hat_cap/hat_classifier_2_97_new.h5 ./hat_cap/hat_classifier_2_97_new.h5
 COPY ./roll_pitch_yaw/roll_pitch_yaw_test.py ./roll_pitch_yaw/roll_pitch_yaw_test.py
 COPY ./varied_background/grab_cut_mean.py ./varied_background/grab_cut_mean.py
 COPY ./washed_out/washed_out.py ./washed_out/washed_out.py
