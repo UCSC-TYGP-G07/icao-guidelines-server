@@ -197,7 +197,7 @@ class ICAOPhotoValidator:
 
     def _validate_too_dark_or_light(self):
         compliance_score = check_light_or_dark_score(self.paths["original_image"])
-        return {"is_passed": compliance_score > 88, "compliance-score": compliance_score}
+        return {"is_passed": bool(compliance_score > 87), "compliance-score": compliance_score}
 
     def validate(self):
         print("Running ICAO photo validation pipeline")
