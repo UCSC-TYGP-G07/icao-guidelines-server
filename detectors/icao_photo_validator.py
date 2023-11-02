@@ -10,6 +10,7 @@ from eyes.eye_tests import check_eyes_open, check_looking_away, check_redeye, ch
 from roll_pitch_yaw.roll_pitch_yaw_test import is_valid_roll_pitch_yaw
 from varied_background.grab_cut_mean import check_varied_bg
 from geometric_tests.geometric_tests import valid_geometric
+from washed_out.washed_out import is_washed_out
 from utilities.mp_face import get_num_faces, get_mp_face_region, get_face_landmarks_and_blendshapes, \
     extract_face_oval_image, get_face_oval_mask, get_eye_region, get_mp_iris_region
 from utilities.points_and_guides_marker import get_core_face_points, get_face_guidelines
@@ -191,6 +192,10 @@ class ICAOPhotoValidator:
         return {"is_passed": is_mouth_closed and is_proper_expression, "mouth_closed": is_mouth_closed,
                 "proper_expression": is_proper_expression}
 
+    def _validate_washed_out(self):
+        is_washed_out_, washed_out_score = is_washed_out(self.paths["original_image"])
+        return {"is_passed": bool(not is_washed_out_), "washed_out_score": washed_out_score}
+
     def _validate_hat_or_cap(self):
         is_wearing_hat = detect_hat_or_cap(self.paths["original_image"])
         return {"is_passed": not is_wearing_hat}
@@ -213,8 +218,9 @@ class ICAOPhotoValidator:
             "hair_across_eyes": self._validate_hair_across_eyes,  # ICAO-15
             "shadows_across_face": self._validate_shadows_across_face,  # ICAO-22
             "mouth_open": self._validate_mouth_open,  # ICAO-29
-            "hat_or_cap": self._validate_hat_or_cap,  # ICAO-27
             "roll_pitch_yaw": self._validate_roll_pitch_yaw  # ICAO-18
+            "washed_out": self._validate_washed_out,  # ICAO-33
+            "hat_or_cap": self._validate_hat_or_cap  # ICAO-27
         }
 
         # Pre-process the input file before running the tests
