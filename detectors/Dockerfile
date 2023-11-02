@@ -25,7 +25,10 @@ COPY ./blur/laplacian/ ./blur/laplacian/
 COPY ./eyes/ ./eyes/
 COPY ./face/ ./face/
 COPY ./geometric_tests/geometric_tests.py ./geometric_tests/geometric_tests.py
+COPY ./hat_cap/hat_or_cap.py ./hat_cap/hat_or_cap.py
+COPY ./roll_pitch_yaw/roll_pitch_yaw_test.py ./roll_pitch_yaw/roll_pitch_yaw_test.py
 COPY ./varied_background/grab_cut_mean.py ./varied_background/grab_cut_mean.py
+COPY ./washed_out/washed_out.py ./washed_out/washed_out.py
 
 COPY server.py icao_photo_validator.py ./
 
