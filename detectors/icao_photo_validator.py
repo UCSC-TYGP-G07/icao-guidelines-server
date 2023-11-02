@@ -218,7 +218,7 @@ class ICAOPhotoValidator:
             "hair_across_eyes": self._validate_hair_across_eyes,  # ICAO-15
             "shadows_across_face": self._validate_shadows_across_face,  # ICAO-22
             "mouth_open": self._validate_mouth_open,  # ICAO-29
-            "roll_pitch_yaw": self._validate_roll_pitch_yaw  # ICAO-18
+            "roll_pitch_yaw": self._validate_roll_pitch_yaw,  # ICAO-18
             "washed_out": self._validate_washed_out,  # ICAO-33
             "hat_or_cap": self._validate_hat_or_cap  # ICAO-27
         }
