@@ -4,6 +4,7 @@ from fastapi import status, FastAPI, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 
 from blur.laplacian import laplacian
+from detectors.exposure_tests.main import check_light_or_dark_score
 from hat_cap.hat_or_cap import detect_hat_or_cap
 from face.face_tests import check_illumination_intensity, check_shadows_across_face, check_mouth_open
 from eyes.eye_tests import check_eyes_open, check_looking_away, check_redeye, check_hair_across_eyes
@@ -194,6 +195,10 @@ class ICAOPhotoValidator:
         is_wearing_hat = detect_hat_or_cap(self.paths["original_image"])
         return {"is_passed": not is_wearing_hat}
 
+    def _validate_too_dark_or_light(self):
+        compliance_score = check_light_or_dark_score(self.paths["original_image"])
+        return {"is_passed": compliance_score > 88, "compliance-score": compliance_score}
+
     def validate(self):
         print("Running ICAO photo validation pipeline")
         # Mapping of test names to corresponding validation methods
@@ -208,7 +213,8 @@ class ICAOPhotoValidator:
             "hair_across_eyes": self._validate_hair_across_eyes,  # ICAO-15
             "shadows_across_face": self._validate_shadows_across_face,  # ICAO-22
             "mouth_open": self._validate_mouth_open,  # ICAO-29
-            "hat_or_cap": self._validate_hat_or_cap  # ICAO-27
+            "hat_or_cap": self._validate_hat_or_cap,  # ICAO-27
+            "too_dark_or_light": self._validate_too_dark_or_light  # ICAO-12
         }
 
         # Pre-process the input file before running the tests
