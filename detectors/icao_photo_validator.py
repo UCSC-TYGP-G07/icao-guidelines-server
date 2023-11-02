@@ -4,7 +4,7 @@ from fastapi import status, FastAPI, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 
 from blur.laplacian import laplacian
-from detectors.exposure_tests.main import check_light_or_dark_score
+from exposure_tests.main import check_light_or_dark_score
 from hat_cap.hat_or_cap import detect_hat_or_cap
 from face.face_tests import check_illumination_intensity, check_shadows_across_face, check_mouth_open
 from eyes.eye_tests import check_eyes_open, check_looking_away, check_redeye, check_hair_across_eyes
