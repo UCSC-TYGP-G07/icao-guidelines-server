@@ -213,7 +213,8 @@ class ICAOPhotoValidator:
             "hair_across_eyes": self._validate_hair_across_eyes,  # ICAO-15
             "shadows_across_face": self._validate_shadows_across_face,  # ICAO-22
             "mouth_open": self._validate_mouth_open,  # ICAO-29
-            "hat_or_cap": self._validate_hat_or_cap  # ICAO-27
+            "hat_or_cap": self._validate_hat_or_cap,  # ICAO-27
+            "roll_pitch_yaw": self._validate_roll_pitch_yaw  # ICAO-18
         }
 
         # Pre-process the input file before running the tests
