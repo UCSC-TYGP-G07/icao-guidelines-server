@@ -1,9 +1,3 @@
-import sys
-import time
-
-import mediapipe as mp
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
 import os
 
 dirname = os.path.dirname(__file__)
